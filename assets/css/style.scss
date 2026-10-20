@@ -3,6 +3,9 @@
 
 @import "{{ site.theme }}";
 
+// Let long commands in a table's last column (the install commands) wrap, so the table fits the text column.
+td:last-child code { overflow-wrap: anywhere; }
+
 // Dark colors when the reader's OS or browser prefers dark. The Minimal theme has light colors only.
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: dark; }
