@@ -26,7 +26,7 @@ These aren't Claude Code plugins, so install them yourself:
 | Herdr's [Claude Code integration](https://herdr.dev/docs/agents/) | Lets Herdr report when a worker is working, idle, or blocked. Without it the coordinator never sees a worker finish. It adds a `SessionStart` hook to your Claude Code settings. | `herdr integration install claude` |
 | The `herdr` skill | Teaches the coordinator Herdr's commands | `npx skills add ogulcancelik/herdr --skill herdr -g` |
 | The `plannotator` binary | What the Plannotator plugin runs | See the Plannotator README |
-| [yaks](https://github.com/mattwynne/yaks) (`yx`) | The task graph praxis uses. It survives `/clear`, which native tasks don't. | `curl -fsSL https://raw.githubusercontent.com/mattwynne/yaks/main/install.sh \| bash` |
+| [yaks](https://github.com/mattwynne/yaks) (`yx`) | The task graph praxis uses. It survives `/clear`, which native tasks don't. | See [Install](https://github.com/mattwynne/yaks#install) in the yaks README |
 | A Jira MCP server (optional) | Starting work from a Jira issue key | Whichever server your Jira instance uses |
 
 `/skyforge:start` checks for Herdr and its Claude Code integration, the `herdr` skill, `plannotator`, and `yx`, and tells you which is missing.
