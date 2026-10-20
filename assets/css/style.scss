@@ -1,0 +1,39 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+// Dark colors when the reader's OS or browser prefers dark. The Minimal theme has light colors only.
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+
+  body { background-color: #0d1117; color: #b1bac4; }
+  h1, h2, h3, h4, h5, h6, strong, dt, th { color: #f0f6fc; }
+
+  a { color: #58a6ff; }
+  a:hover, a:focus { color: #79c0ff; }
+  a small, a:hover small, small { color: #8b949e; }
+
+  blockquote { border-left-color: #30363d; color: #8b949e; }
+  th, td { border-bottom-color: #30363d; }
+  hr { background: #30363d; }
+  section { border-color: #30363d; }
+
+  code, pre { color: #e6edf3; }
+  pre, .highlight { background: #161b22; border-color: #30363d; }
+  kbd { background-color: #161b22; border-color: #30363d; color: #e6edf3; }
+
+  ul.downloads { background: #161b22; border-color: #30363d; }
+  .downloads li { border-right-color: #30363d; }
+  .downloads a, .downloads a strong { color: #e6edf3; }
+  .downloads a:hover, .downloads a:focus { color: #f0f6fc; }
+  .downloads ul a:active { background-color: #21262d; }
+
+  // Syntax colors. The theme's are tuned for a white background.
+  .highlight .c, .highlight .c1, .highlight .cm, .highlight .cd, .highlight .cs, .highlight .cp { color: #8b949e; }
+  .highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt, .highlight .o, .highlight .ow { color: #ff7b72; }
+  .highlight .s, .highlight .s1, .highlight .s2, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .se, .highlight .sh, .highlight .si, .highlight .sx, .highlight .sr { color: #a5d6ff; }
+  .highlight .m, .highlight .mi, .highlight .mf, .highlight .mh, .highlight .mo, .highlight .il { color: #79c0ff; }
+  .highlight .na, .highlight .nb, .highlight .nc, .highlight .nf, .highlight .nn, .highlight .nt, .highlight .nv, .highlight .vi, .highlight .vg, .highlight .bp { color: #d2a8ff; }
+  .highlight .err { background: none; color: #ffa198; }
+}
