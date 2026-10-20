@@ -1,0 +1,10 @@
+# GitHub Pages builds the docs site from this repo's Markdown, with README.md as the home page.
+title: Skyforge
+description: Run several Claude Code sessions at once, with Herdr, praxis, and Plannotator
+theme: jekyll-theme-minimal
+
+# Keep the plugin itself off the site. SKILL.md has front matter, so Jekyll would publish it as a page.
+exclude:
+  - plugins/
+  - .claude-plugin/
+  - .github/
