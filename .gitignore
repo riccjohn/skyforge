@@ -1,0 +1,14 @@
+# IDE files
+*.iml
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+
+# Praxis session artifacts and yaks task graphs
+.light/
+.yaks
