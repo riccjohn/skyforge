@@ -1,5 +1,9 @@
 # Skyforge
 
+![The Skyforge in Whiterun, from The Elder Scrolls V: Skyrim: a forge under a giant stone eagle](./assets/skyforge.webp)
+
+<sub>Screenshot from The Elder Scrolls V: Skyrim, © Bethesda Softworks. Not covered by this repository's license.</sub>
+
 A Claude Code plugin for running several Claude Code sessions at once. `/skyforge:start` turns your session into a **coordinator**. For each piece of work it creates a git worktree and a **worker** session in a Herdr pane, then drives that worker through praxis research → plan → implement, clearing its context between phases.
 
 You review each phase's output in Plannotator. Workers send questions to the Plannotator Inbox instead of asking in chat, and they never push or merge.
