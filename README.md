@@ -23,12 +23,13 @@ These aren't Claude Code plugins, so install them yourself:
 | Tool | Used for | Install |
 |---|---|---|
 | [Herdr](https://herdr.dev) | Panes, worktrees, and controlling the worker sessions. Run Claude Code inside Herdr. | See the Herdr README |
+| Herdr's [Claude Code integration](https://herdr.dev/docs/agents/) | Lets Herdr report when a worker is working, idle, or blocked. Without it the coordinator never sees a worker finish. It adds a `SessionStart` hook to your Claude Code settings. | `herdr integration install claude` |
 | The `herdr` skill | Teaches the coordinator Herdr's commands | `npx skills add ogulcancelik/herdr --skill herdr -g` |
 | The `plannotator` binary | What the Plannotator plugin runs | See the Plannotator README |
 | [yaks](https://github.com/mattwynne/yaks) (`yx`) | The task graph praxis uses. It survives `/clear`, which native tasks don't. | `curl -fsSL https://raw.githubusercontent.com/mattwynne/yaks/main/install.sh \| bash` |
 | A Jira MCP server (optional) | Starting work from a Jira issue key | Whichever server your Jira instance uses |
 
-`/skyforge:start` checks for Herdr, the `herdr` skill, `plannotator`, and `yx`, and tells you which is missing.
+`/skyforge:start` checks for Herdr and its Claude Code integration, the `herdr` skill, `plannotator`, and `yx`, and tells you which is missing.
 
 ## Installation
 
@@ -67,7 +68,7 @@ From a Claude Code session running inside Herdr, in the repo you want to work on
 | `<topic>` | A short kebab-case name for the piece of work: lowercase letters, digits, and hyphens, starting with a letter, up to 32 characters. It names the branch (`skyforge/<topic>`), the Herdr worker, and the files under `.light/sessions/`. |
 | `<goal>` | Everything after the topic: a one-line description of what you want built. The coordinator puts it in the brief and in the worker's research prompt. |
 | `<JIRA-KEY>` | A Jira issue key such as `PROJ-123`, in place of a topic and goal. The coordinator reads the issue and derives both: the topic from the key and summary (`proj-123-discount-codes`), the goal from the summary. The description and acceptance criteria go into the brief. Needs a Jira MCP server, or another Jira tool, in the coordinator's session. |
-| `[notes]` | Optional text after a Jira key, such as "the API is done, only the UI is left". It goes into the brief. |
+| `[notes]` | Optional text after a Jira key, such as "the API is done, only the UI is left". It goes into the brief. Requests to change the ticket, such as "move it to In Progress and assign it to me", are carried out by the coordinator once the worker starts. The coordinator changes the ticket only when you ask, and workers never touch Jira. |
 | _(nothing)_ | Resume the work already running in this repo, after a `/clear` or in a new session. |
 
 For example:

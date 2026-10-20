@@ -10,6 +10,7 @@ allowed-tools:
   - Bash(herdr agent wait *)
   - Bash(herdr worktree list*)
   - Bash(herdr pane list*)
+  - Bash(herdr integration status*)
   - Bash(yx list*)
 ---
 
@@ -27,7 +28,7 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 
 ## Start
 
-1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. If any is missing, tell the person which one and how to install it (the README's prerequisites table), and stop.
+1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. Then run `herdr integration status` and check that the `claude:` line says `current`. Without Herdr's Claude Code integration, Herdr can't report worker states, so watches never fire; `herdr integration install claude` installs or updates it. If anything is missing, tell the person which one and how to install it (the README's prerequisites table), and stop. Don't install it yourself: the integration changes the person's Claude Code settings.
 2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work: read its status file and pick it up at the matching step of [Run the phases](#run-the-phases). Done when every such worktree has a watch armed or is finished.
 3. With no arguments and nothing to resume, ask the person for a topic and goal.
 
@@ -35,11 +36,16 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 
 1. Settle the **topic** and **goal** from the arguments. The topic is a kebab-case slug matching `[a-z][a-z0-9-]{0,31}`. It names the branch (`skyforge/<topic>`), the worker, and the artifacts. The goal is one line, used in the research prompt and the brief.
    - `<topic> <goal>`: the first word is the topic, the rest is the goal.
-   - `<JIRA-KEY> [notes]`: the first word is an issue key such as `PROJ-123`. Fetch the issue with a Jira tool available in this session, such as a Jira MCP server. If there is none, tell the person and ask for a topic and goal instead. The topic is the lowercased key plus a few words from the summary (`proj-123-discount-codes`), the goal is the summary. Any notes after the key go into the brief.
-2. Make yaks usable, because praxis falls back to session-scoped tasks that `/clear` destroys. In the repo root run `yx list --format json`. If it fails because `.yaks` is not gitignored, append `.yaks` to `.git/info/exclude` (local to this clone; worktrees share it) and re-run until it succeeds.
-3. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response.
-4. Write the brief from [brief-template.md](references/brief-template.md), filling in everything you can from the person's request. From a Jira issue, put its key and link under Context, the substance of its description under Goal and Context, and its acceptance criteria under Done when, so workers never need Jira access. Open it for approval with the `plannotator` tool (`action: annotate`, `gate: true`), then end your turn. Done when the person approves; on annotations, revise and reopen.
-5. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`.
+   - `<JIRA-KEY> [notes]`: the first word is an issue key such as `PROJ-123`. Fetch the issue with a Jira tool available in this session, such as a Jira MCP server. If there is none, tell the person and ask for a topic and goal instead. The topic is the lowercased key plus a few words from the summary (`proj-123-discount-codes`), the goal is the summary. Any notes after the key go into the brief, except requests to change the issue (see [Jira](#jira)).
+2. Settle the **repo**: the git repository the code lands in. It is usually the one you started in, but a Jira issue can name another repo or a code area that lives in one. If you can't tell, ask. Its root is `<repo root>` in the steps below; run every setup command there, not in the repo you started in.
+3. Keep Skyforge's files out of commits and make yaks usable, because praxis falls back to session-scoped tasks that `/clear` destroys. In `<repo root>`, append `.yaks` and `.light/` to `.git/info/exclude` (local to this clone; worktrees share it), skipping any that `.gitignore` or the exclude file already covers. Then run `yx list --format json` and check that it succeeds.
+4. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response.
+5. Write the brief from [brief-template.md](references/brief-template.md), filling in everything you can from the person's request. From a Jira issue, put its key and link under Context, the substance of its description under Goal and Context, and its acceptance criteria under Done when, so workers never need Jira access. Make every item under Done when a check a worker can run and record. When the repo has no test suite, write the checks that take its place. Open it for approval with the `plannotator` tool (`action: annotate`, `gate: true`), then end your turn. Done when the person approves; on annotations, revise and reopen.
+6. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`. Then make any Jira changes the person asked for.
+
+### Jira
+
+Change an issue only when the person asks, for example "move it to In Progress and assign it to me" in the notes. Make the change yourself, after the worker starts, and tell the person what you changed. Workers never use Jira; the brief carries what they need.
 
 ## Run the phases
 
@@ -49,7 +55,7 @@ Each phase is one prompt to the worker. Start it, then arm a **watch**.
 |---|---|---|
 | research | `/praxis:research <topic>: <goal>. Read .light/sessions/<topic>-brief.md first and follow it.` | `.light/sessions/<topic>-research.md` |
 | plan | `/clear`, then `/praxis:plan-tasks <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | `.light/sessions/<topic>-plan.md`, and `yx list --format json` in the worktree is non-empty |
-| implement | `/clear`, then `/praxis:implement <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | a `.light/sessions/*<topic>*.md` session artifact recording a passing test suite |
+| implement | `/clear`, then `/praxis:implement <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | a `.light/sessions/*<topic>*.md` session artifact recording that every check under the brief's Done when passes |
 
 Send `/clear` with `herdr agent prompt <topic> "/clear" --wait --timeout 60000`, and the phase prompt with `herdr agent prompt <topic> "<prompt>"`.
 

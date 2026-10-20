@@ -1,7 +1,7 @@
 {
   "name": "skyforge",
   "description": "A coordinator that drives Claude Code worker sessions in Herdr through praxis research, plan, and implement, with Plannotator for human review and questions.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "John Riccardi"
   },
