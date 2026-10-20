@@ -129,6 +129,8 @@ The coordinator sends a Herdr notification that names the worker's workspace and
 
 The coordinator picks the work up again once the worker carries on.
 
+Herdr shows these notifications only if its pop-ups are turned on, and it hides them for the tab you're looking at. Set `delivery` under `[ui.toast]` in your Herdr config (see Herdr's [notification settings](https://herdr.dev/docs/configuration/#notifications)). The coordinator also says what it needs in its own chat, so with pop-ups off, check there.
+
 ### When the work is done
 
 The branch, the worktree, and both workspaces stay in place for you to review. Committing, pushing, and merging are your calls. When you're finished, `herdr worktree remove --workspace <id>` removes the worktree and closes its workspace. A workspace that Herdr opened for the main checkout is yours to close or keep.
@@ -140,8 +142,8 @@ The skill pre-approves only read-only Herdr and yaks commands. Each `herdr agent
 ## Known gaps
 
 - Claude Code only, for both the coordinator and the workers. OpenCode support is planned. Herdr and Plannotator already support OpenCode; what would change is installing the skill outside the plugin marketplace, clearing workers with `/new` instead of `/clear`, a coordinator watch that doesn't rely on Claude Code's background-command wake-ups, and, the biggest piece, praxis, which depends on Claude Code subagents and tools.
-- Not yet tested end to end. In particular, check that `/clear` and slash commands sent through `herdr agent prompt` run as commands.
-- Praxis skills launch Plannotator through Bash by default. The brief tells workers to use the `plannotator` tool instead so the session isn't held by a two-minute Bash timeout. Watch for workers that ignore this.
+- Run end to end once so far, on one piece of work. Slash commands and `/clear` sent through `herdr agent prompt` work, and workers used the `plannotator` tool for every review instead of the Bash default in praxis skills. Running several pieces of work at once hasn't been tried yet.
+- Herdr sometimes loses track of a worker while its session keeps running, and the worker's name disappears from `herdr agent list`. The coordinator restores the name and carries on, but the cause isn't known yet.
 
 ## Contributing
 
