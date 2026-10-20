@@ -145,7 +145,7 @@ The skill pre-approves only read-only Herdr and yaks commands. Each `herdr agent
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/riccjohn/skyforge/blob/main/CONTRIBUTING.md).
 
 ## License
 
