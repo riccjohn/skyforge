@@ -83,12 +83,55 @@ The coordinator:
 
 1. Creates the worktree and the `skyforge/<topic>` branch.
 2. Writes a **brief** (`.light/sessions/<topic>-brief.md`) for you to approve. It holds the goal, the definition of done, and the rules workers follow. From a Jira issue, it carries the ticket's content, so workers don't need Jira access.
-3. Starts a worker and runs the three phases. It pings you with a Herdr notification whenever a review, a question, or a permission prompt needs you.
+3. Starts a worker in its own Herdr workspace and runs the three phases. It pings you with a Herdr notification whenever a review, a question, or a permission prompt needs you. See [Where things appear in Herdr](#where-things-appear-in-herdr).
 4. Sends a summary to the Plannotator Inbox when the work is done.
 
 Run `/skyforge:start` again with another topic or issue key to start more work in parallel. Run it with no arguments in a new session to pick up running work from disk.
 
 To change how a piece of work is done, edit its brief. Workers re-read it at the start of every phase.
+
+## Where things appear in Herdr
+
+Skyforge puts each piece of work in its own Herdr workspace, so the sidebar shows the state of each one separately.
+
+- **The coordinator** stays in the pane where you ran `/skyforge:start`. Talk to it to start work, change direction, or ask how a piece of work is going.
+- **Each piece of work** gets a workspace named after its topic. The workspace is a git worktree on the `skyforge/<topic>` branch, under `~/.herdr/worktrees/`, and the worker runs in its pane.
+- **Herdr nests that workspace** under the workspace of the repo's main checkout, because a worktree is an extra checkout of the same repo. The nesting is only a display. Each workspace has its own tabs, panes, and directory.
+- **Herdr may open a workspace you didn't create.** If no workspace is open for the repo where the code lands, for example when a Jira issue points at a different repo, Herdr opens one for the main checkout to hold the worktree. It contains a plain shell, and nothing runs in it. The coordinator tells you when this happens.
+
+For example, `/skyforge:start SHOP-482` run from `shop-api`, for work that lands in `storefront`:
+
+```text
+spaces
+  shop-api                      ← the coordinator, in the tab where you ran it
+▾ storefront                    ← opened by Herdr for storefront's main checkout; a plain shell
+    shop-482-discount-codes     ← the worker, in its worktree
+```
+
+### Following progress
+
+| To see | Look at |
+|---|---|
+| Whether a worker is working, blocked, or finished | The status shown next to its workspace in the Herdr sidebar |
+| What a worker is doing now | Its workspace. Click it to watch the worker; you don't need to type anything there. |
+| Which phase it is in and how the last one ended | Ask the coordinator, or read `.light/sessions/<topic>.status` in the worktree |
+| Plans and code to review | Plannotator, which opens a review in your browser when a phase needs your approval |
+| Questions a worker can't answer itself | The Plannotator Inbox |
+| The final summary | The Plannotator Inbox, when implement is done |
+
+### When a worker needs you
+
+The coordinator sends a Herdr notification that names the worker's workspace and says what it needs:
+
+- **A permission prompt or question in the worker's pane**: open the worker's workspace and answer it there. The coordinator never answers for you.
+- **A review or an Inbox question**: answer it in Plannotator.
+- **Stuck**: the worker wrote `<phase> stuck: <reason>` and stopped. Tell the coordinator what to do, or edit the brief and ask the coordinator to restart the phase.
+
+The coordinator picks the work up again once the worker carries on.
+
+### When the work is done
+
+The branch, the worktree, and both workspaces stay in place for you to review. Committing, pushing, and merging are your calls. When you're finished, `herdr worktree remove --workspace <id>` removes the worktree and closes its workspace. A workspace that Herdr opened for the main checkout is yours to close or keep.
 
 ## Permissions
 

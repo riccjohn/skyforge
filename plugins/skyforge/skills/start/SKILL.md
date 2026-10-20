@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(herdr worktree list*)
   - Bash(herdr pane list*)
   - Bash(herdr integration status*)
+  - Bash(herdr workspace list*)
   - Bash(yx list*)
 ---
 
@@ -39,9 +40,9 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
    - `<JIRA-KEY> [notes]`: the first word is an issue key such as `PROJ-123`. Fetch the issue with a Jira tool available in this session, such as a Jira MCP server. If there is none, tell the person and ask for a topic and goal instead. The topic is the lowercased key plus a few words from the summary (`proj-123-discount-codes`), the goal is the summary. Any notes after the key go into the brief, except requests to change the issue (see [Jira](#jira)).
 2. Settle the **repo**: the git repository the code lands in. It is usually the one you started in, but a Jira issue can name another repo or a code area that lives in one. If you can't tell, ask. Its root is `<repo root>` in the steps below; run every setup command there, not in the repo you started in.
 3. Keep Skyforge's files out of commits and make yaks usable, because praxis falls back to session-scoped tasks that `/clear` destroys. In `<repo root>`, append `.yaks` and `.light/` to `.git/info/exclude` (local to this clone; worktrees share it), skipping any that `.gitignore` or the exclude file already covers. Then run `yx list --format json` and check that it succeeds.
-4. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response.
+4. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response. Herdr opens the worktree as its own workspace, labelled `<topic>`, nested under the workspace of the repo's main checkout. Run `herdr workspace list` before and after: if a workspace for `<repo root>` appears that wasn't there before, Herdr opened it to hold the worktree.
 5. Write the brief from [brief-template.md](references/brief-template.md), filling in everything you can from the person's request. From a Jira issue, put its key and link under Context, the substance of its description under Goal and Context, and its acceptance criteria under Done when, so workers never need Jira access. Make every item under Done when a check a worker can run and record. When the repo has no test suite, write the checks that take its place. Open it for approval with the `plannotator` tool (`action: annotate`, `gate: true`), then end your turn. Done when the person approves; on annotations, revise and reopen.
-6. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`. Then make any Jira changes the person asked for.
+6. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`. Then make any Jira changes the person asked for. Tell the person where to find the worker: its workspace `<topic>`, nested under the repo's workspace. If Herdr opened a workspace for the main checkout in step 4, say so, and that nothing runs in it.
 
 ### Jira
 
@@ -84,10 +85,10 @@ You are re-invoked when a watch exits. Read the worker's status file, `herdr age
 | still `working` (the wait timed out) | Re-arm the watch. |
 | `unknown` | Read further back and judge; when unsure, treat it as `blocked`. |
 
-Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`.
+Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`. Every notification names the worker's workspace and says where to answer: a permission prompt or question UI in that workspace's pane, a review or Inbox question in Plannotator, or a stuck status by telling you.
 
 A worker whose context runs out mid-phase: prompt it with `/mattpocock-skills:handoff continue the <phase> phase`, read the handoff path from its reply, `/clear` it, and prompt it to continue from that file.
 
 ## Finish
 
-After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, and the session artifact in `attachments`. Leave the branch, worktree, and pane in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.
+After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, its Herdr workspace, and the session artifact in `attachments`. Leave the branch, worktree, and pane in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.
