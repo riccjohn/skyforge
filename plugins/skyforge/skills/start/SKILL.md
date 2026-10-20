@@ -27,7 +27,7 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 
 ## Start
 
-1. Check the tools: `HERDR_ENV` is `1`, and `herdr`, `plannotator`, and `yx` are on `PATH`. If any is missing, tell the person which one and stop.
+1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. If any is missing, tell the person which one and how to install it (the README's prerequisites table), and stop.
 2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work: read its status file and pick it up at the matching step of [Run the phases](#run-the-phases). Done when every such worktree has a watch armed or is finished.
 3. With no arguments and nothing to resume, ask the person for a topic and goal.
 

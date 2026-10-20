@@ -6,21 +6,38 @@ You review each phase's output in Plannotator. Workers send questions to the Pla
 
 ## Prerequisites
 
+Installing Skyforge installs these plugins for you, once their marketplaces are added (see [Installation](#installation)):
+
+| Plugin | Used for |
+|---|---|
+| [Plannotator](https://github.com/backnotprop/plannotator) (`plannotator@plannotator`) | Plan and code review, the Inbox |
+| praxis (`praxis@lightfactory`) | The research, plan-tasks, and implement skills |
+| mattpocock-skills (`mattpocock-skills@claude-plugins-official`) | `/mattpocock-skills:handoff`, used when a worker runs out of context |
+
+These aren't Claude Code plugins, so install them yourself:
+
 | Tool | Used for | Install |
 |---|---|---|
 | [Herdr](https://herdr.dev) | Panes, worktrees, and controlling the worker sessions. Run Claude Code inside Herdr. | See the Herdr README |
-| [Plannotator](https://github.com/backnotprop/plannotator) | Plan and code review, the Inbox | `claude plugin marketplace add backnotprop/plannotator` then `claude plugin install plannotator@plannotator` (needs the `plannotator` binary too; see its README) |
-| praxis (lightfactory) | The research, plan-tasks, and implement skills | `claude plugin marketplace add 8thlight/lightfactory` then `claude plugin install praxis@lightfactory` |
+| The `herdr` skill | Teaches the coordinator Herdr's commands | `npx skills add ogulcancelik/herdr --skill herdr -g` |
+| The `plannotator` binary | What the Plannotator plugin runs | See the Plannotator README |
 | [yaks](https://github.com/mattwynne/yaks) (`yx`) | The task graph praxis uses. It survives `/clear`, which native tasks don't. | `curl -fsSL https://raw.githubusercontent.com/mattwynne/yaks/main/install.sh \| bash` |
-| mattpocock-skills | `/mattpocock-skills:handoff`, used when a worker runs out of context | `claude plugin install mattpocock-skills@claude-plugins-official` |
 | A Jira MCP server (optional) | Starting work from a Jira issue key | Whichever server your Jira instance uses |
+
+`/skyforge:start` checks for Herdr, the `herdr` skill, `plannotator`, and `yx`, and tells you which is missing.
 
 ## Installation
 
+Claude Code doesn't add a dependency's marketplace for you, so add Plannotator's and praxis's before installing Skyforge. `claude-plugins-official` is added by default.
+
 ```shell
+claude plugin marketplace add backnotprop/plannotator
+claude plugin marketplace add 8thlight/lightfactory
 claude plugin marketplace add riccjohn/skyforge
 claude plugin install skyforge@skyforge
 ```
+
+If you skip the first two lines, the install still succeeds but Skyforge stays disabled with `Dependency "…" is not installed`. Add the missing marketplaces and run `/reload-plugins` to install them.
 
 ### Updating
 
