@@ -41,7 +41,7 @@ Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it i
 | You find | Do |
 |---|---|
 | the worker is `working` | Arm the watch. |
-| no worker in the pane | Launch didn't finish. Pick it up at step 5 of [Launch](#launch-a-piece-of-work): reopen the brief for approval, then start the worker. |
+| no worker in the pane | Launch didn't finish. With no brief, pick it up at step 5 of [Launch](#launch-a-piece-of-work). With a brief, ask the person whether they approved it: approved, go to step 6; not yet, reopen it for approval as in step 5. |
 | no `.phase` file | The worktree predates the phase file. Take the phase from the last `.status` line and the artifacts in `.light/sessions/`, write it to `.phase`, then take the matching row below. |
 | last `.status` line is `<phase> done` for the phase in `.phase` | Verify the approved output from the [phase table](#run-the-phases), then start the next phase, or [Finish](#finish) after implement. |
 | last `.status` line is `<phase> stuck: …` for the phase in `.phase` | Notify the person with the reason, and wait for their direction. |
