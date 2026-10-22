@@ -22,7 +22,8 @@ You are the **coordinator**. Each piece of work gets one **worker**: a Claude Co
 Durable state lives on disk, so any session can be cleared and resumed:
 
 - **Brief**: `<worktree>/.light/sessions/<topic>-brief.md`, the work definition and the rules workers follow. The person edits it to change the process for this piece of work; workers re-read it every phase.
-- **Status**: `<worktree>/.light/sessions/<topic>.status`, one line the worker writes at the end of each phase: `<phase> done` or `<phase> stuck: <reason>`.
+- **Status**: `<worktree>/.light/sessions/<topic>.status`, written only by the worker. It appends one line at the end of each phase, `<phase> done` or `<phase> stuck: <reason>`; the last line is current.
+- **Phase**: `<worktree>/.light/sessions/<topic>.phase`, written only by you. It holds the phase you last prompted, so a resume knows what is in flight even before the worker finishes it.
 - **Praxis artifacts** in `.light/sessions/` and the yaks task graph in the worktree.
 
 The `herdr` skill is the reference for Herdr commands. The `plannotator` skill is the reference for reviews and the Inbox.
@@ -30,8 +31,21 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 ## Start
 
 1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. Then run `herdr integration status` and check that the `claude:` line says `current`. Without Herdr's Claude Code integration, Herdr can't report worker states, so watches never fire; `herdr integration install claude` installs or updates it. If anything is missing, tell the person which one and how to install it (the README's prerequisites table), and stop. Don't install it yourself: the integration changes the person's Claude Code settings.
-2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work: read its status file and pick it up at the matching step of [Run the phases](#run-the-phases). If the worker's pane holds a Claude Code agent with no name, restore it with `herdr agent rename <pane ID> <topic>`. Done when every such worktree has a watch armed or is finished.
+2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work. If the worker's pane holds a Claude Code agent with no name, restore it with `herdr agent rename <pane ID> <topic>`. Then read `.phase`, the last line of `.status`, and `herdr agent get <topic>`, and take the first matching row of [Resume](#resume). Done when every such worktree has a watch armed or is finished.
 3. With no arguments and nothing to resume, ask the person for a topic and goal.
+
+### Resume
+
+Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it is in.
+
+| You find | Do |
+|---|---|
+| the worker is `working` | Arm the watch. |
+| no worker in the pane | Launch didn't finish. Pick it up at step 5 of [Launch](#launch-a-piece-of-work): reopen the brief for approval, then start the worker. |
+| no `.phase` file | The worktree predates the phase file. Take the phase from the last `.status` line and the artifacts in `.light/sessions/`, write it to `.phase`, then take the matching row below. |
+| last `.status` line is `<phase> done` for the phase in `.phase` | Verify the approved output from the [phase table](#run-the-phases), then start the next phase, or [Finish](#finish) after implement. |
+| last `.status` line is `<phase> stuck: …` for the phase in `.phase` | Notify the person with the reason, and wait for their direction. |
+| no `.status` line yet for the phase in `.phase` | Read the pane. Waiting on a review, a question, or a permission prompt: notify the person and arm the resume watch. A fresh session that never got the phase prompt: send it, then arm the watch. |
 
 ## Launch a piece of work
 
@@ -50,7 +64,7 @@ Change an issue only when the person asks, for example "move it to In Progress a
 
 ## Run the phases
 
-Each phase is one prompt to the worker. Start it, then arm a **watch**.
+Each phase is one prompt to the worker. Write the phase name (`research`, `plan`, or `implement`) to `.light/sessions/<topic>.phase` in the worktree, start the phase, then arm a **watch**. Write `.phase` first, so a resume never mistakes a phase in flight for one that hasn't started.
 
 | Phase | Prompt the worker with | Approved output to verify |
 |---|---|---|
@@ -74,11 +88,11 @@ After a worker went quiet waiting on the person, arm the watch so it first waits
 herdr agent wait <topic> --until working --timeout 7000000 && herdr agent wait <topic> --timeout 7000000
 ```
 
-You are re-invoked when a watch exits. Read the worker's status file, `herdr agent get <topic>`, and `herdr agent read <topic> --source recent-unwrapped --lines 80`, then take the first matching row:
+You are re-invoked when a watch exits. Read the last line of the worker's status file, `herdr agent get <topic>`, and `herdr agent read <topic> --source recent-unwrapped --lines 80`, then take the first matching row:
 
 | Worker shows | Do |
 |---|---|
-| status `<phase> done` for the current phase | Verify the approved output from the phase table. Verified: start the next phase. Missing: tell the worker what is missing and re-arm. |
+| status `<phase> done` for the phase in `.phase` | Verify the approved output from the phase table. Verified: start the next phase. Missing: tell the worker what is missing and re-arm. |
 | status `<phase> stuck: …` | Tell the person the reason with `herdr notification show "skyforge: <topic> stuck" --body "<reason>" --sound request`, and wait for their direction. |
 | `blocked` (a permission prompt or question UI) | Notify the person with what it is asking, then arm the resume watch. |
 | `idle` or `done` with no new status | The worker is waiting on a Plannotator review or an Inbox answer. Notify the person, then arm the resume watch. |
@@ -86,7 +100,7 @@ You are re-invoked when a watch exits. Read the worker's status file, `herdr age
 | `unknown` | Read further back and judge; when unsure, treat it as `blocked`. |
 | the watch fails with `agent_not_running` or `agent_not_found` | Herdr lost track of the worker, which can happen while its session keeps running. Run `herdr agent list` and find the worker's pane. A Claude Code agent there with no name is the worker: restore the name with `herdr agent rename <pane ID> <topic>` and take the row that matches its state. Only a bare shell in the pane means the session ended: tell the person, and wait for their direction. |
 
-Only the worker writes the status file. Never write it yourself, even when the phase's output looks complete: the worker writes `done` only after the person approves, so a missing line can mean a review is still open.
+Only the worker writes the status file, and only you write `.phase`. Never write the status file yourself, even when the phase's output looks complete: the worker writes `done` only after the person approves, so a missing line can mean a review is still open.
 
 Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`. Every notification names the worker's workspace and says where to answer: a permission prompt or question UI in that workspace's pane, a review or Inbox question in Plannotator, or a stuck status by telling you.
 

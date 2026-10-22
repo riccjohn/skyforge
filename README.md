@@ -114,7 +114,7 @@ spaces
 |---|---|
 | Whether a worker is working, blocked, or finished | The status shown next to its workspace in the Herdr sidebar |
 | What a worker is doing now | Its workspace. Click it to watch the worker; you don't need to type anything there. |
-| Which phase it is in and how the last one ended | Ask the coordinator, or read `.light/sessions/<topic>.status` in the worktree |
+| Which phase it is in and how the last one ended | Ask the coordinator, or read the last line of `.light/sessions/<topic>.status` in the worktree |
 | Plans and code to review | Plannotator, which opens a review in your browser when a phase needs your approval |
 | Questions a worker can't answer itself | The Plannotator Inbox |
 | The final summary | The Plannotator Inbox, when implement is done |
