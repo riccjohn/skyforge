@@ -137,7 +137,38 @@ The branch, the worktree, and both workspaces stay in place for you to review. C
 
 ## Permissions
 
-The skill pre-approves only read-only Herdr and yaks commands. Each `herdr agent prompt` and `herdr worktree create` asks for approval. If you are comfortable with that, allow them in your own settings.
+The skill pre-approves only read-only Herdr and yaks commands, such as `herdr agent list`, `herdr agent wait`, and `yx list`. Commands that start sessions or type into them ask for approval every time, so each phase brings two or three prompts.
+
+To stop those prompts, add these rules to `permissions.allow` in `~/.claude/settings.json`. That file applies in every repo, which suits a coordinator you start from any of them. To allow them in one repo only, put them in that repo's `.claude/settings.local.json` instead.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(herdr agent prompt *)",
+      "Bash(herdr agent start *)",
+      "Bash(herdr agent rename *)",
+      "Bash(herdr notification show *)",
+      "Bash(herdr worktree create *)"
+    ]
+  }
+}
+```
+
+| Rule | Lets the coordinator |
+|---|---|
+| `herdr agent prompt` | Send a phase prompt or `/clear` to a worker. Runs two or three times a phase. |
+| `herdr agent start` | Start a worker in its pane, once per piece of work. |
+| `herdr agent rename` | Give a worker back its name when Herdr loses it. |
+| `herdr notification show` | Ping you when a worker needs you. |
+| `herdr worktree create` | Create the worktree and the `skyforge/<topic>` branch, once per piece of work. |
+
+Two of these deserve thought before you allow them:
+
+- `herdr agent prompt` lets any session, not only the coordinator, type anything into any Herdr agent without asking you.
+- `herdr worktree create` lets any session create branches and worktrees in any repo.
+
+These rules cover only Bash commands. The edit to `.git/info/exclude`, made once per repo, still asks, and the `plannotator` tool, which the coordinator uses for reviews and the Inbox, follows its own permission settings.
 
 ## Known gaps
 
