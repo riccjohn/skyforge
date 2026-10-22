@@ -6,7 +6,7 @@
 
 ## Context
 
-<!-- Links to the issue (a Jira ticket, for example), pull request, docs, or code areas the worker should start from. -->
+<!-- Links to any issue (a Jira ticket, for example), pull or merge request, docs, or code areas the worker should start from. -->
 
 ## Constraints
 
