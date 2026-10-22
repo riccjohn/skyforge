@@ -137,7 +137,42 @@ The branch, the worktree, and both workspaces stay in place for you to review. C
 
 ## Permissions
 
-The skill pre-approves only read-only Herdr and yaks commands. Each `herdr agent prompt` and `herdr worktree create` asks for approval. If you are comfortable with that, allow them in your own settings.
+The skill pre-approves only read-only Herdr and yaks commands, such as `herdr agent list`, `herdr agent wait`, and `yx list`. Everything else asks for approval unless you allow it, so each phase brings a few prompts.
+
+These rules stop the prompts that come every phase. Add them to `permissions.allow` in `.claude/settings.local.json` of the repo you run the coordinator from, so they apply only to sessions in that repo. `~/.claude/settings.json` works too, but every Claude Code session on the machine reads it.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(herdr agent prompt *)",
+      "Bash(herdr notification show *)",
+      "Read(~/.herdr/worktrees/**)",
+      "Edit(~/.herdr/worktrees/**/.light/sessions/*.phase)"
+    ]
+  }
+}
+```
+
+| Rule | Lets the coordinator |
+|---|---|
+| `herdr agent prompt` | Send a phase prompt or `/clear` to a worker, two or three times a phase. |
+| `herdr notification show` | Ping you when a worker needs you. |
+| `Read(~/.herdr/worktrees/**)` | Read status files and phase output in a worker's worktree, and `cd` there to run `yx list`. The worktree is outside the coordinator's directory, so each read asks otherwise. |
+| `Edit(~/.herdr/worktrees/**/.light/sessions/*.phase)` | Write the `.phase` file before each phase, with a file tool or a shell redirect. It doesn't cover the worker's code, its status file, or the phase output you approve. |
+
+If you set `[worktrees] directory` in your Herdr config, use that path in place of `~/.herdr/worktrees`.
+
+Think before you allow `herdr agent prompt`. It lets any session that has the rule give any Herdr agent an instruction, and that agent acts with its own permissions: if it can run commands without asking, so can every session with this rule. It also lets a prompt land on a worker's open permission dialog, where Enter accepts it. The coordinator is told never to answer one, and without the rule you see each prompt it sends.
+
+The rest still ask, on purpose:
+
+- `herdr agent start` and `herdr worktree create` run once per piece of work. `herdr agent start` passes any flags after `--` to the agent, including ones that turn off its permission checks, so read the command before you approve it.
+- `herdr agent rename` runs only when Herdr loses a worker's name. It can rename any agent, so prompts meant for a worker could reach another session.
+- Writing the brief happens once per piece of work, and you approve the brief in Plannotator anyway.
+- The edit to `.git/info/exclude`, once per repo. Claude Code protects `.git`, and no allow rule covers it.
+
+The `plannotator` tool, which the coordinator uses for reviews and the Inbox, is an MCP tool, so these Bash and file rules don't cover it.
 
 ## Known gaps
 
