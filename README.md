@@ -149,7 +149,8 @@ To stop those prompts, add these rules to `permissions.allow` in `~/.claude/sett
       "Bash(herdr agent start *)",
       "Bash(herdr agent rename *)",
       "Bash(herdr notification show *)",
-      "Bash(herdr worktree create *)"
+      "Bash(herdr worktree create *)",
+      "Edit(~/.herdr/worktrees/**/.light/sessions/**)"
     ]
   }
 }
@@ -162,13 +163,14 @@ To stop those prompts, add these rules to `permissions.allow` in `~/.claude/sett
 | `herdr agent rename` | Give a worker back its name when Herdr loses it. |
 | `herdr notification show` | Ping you when a worker needs you. |
 | `herdr worktree create` | Create the worktree and the `skyforge/<topic>` branch, once per piece of work. |
+| `Edit(~/.herdr/worktrees/**/.light/sessions/**)` | Write the brief and the `.phase` file in a worker's worktree. The worktree is outside the coordinator's directory, so each write asks otherwise. It doesn't cover the worker's code. |
 
 Two of these deserve thought before you allow them:
 
 - `herdr agent prompt` lets any session, not only the coordinator, type anything into any Herdr agent without asking you.
 - `herdr worktree create` lets any session create branches and worktrees in any repo.
 
-These rules cover only Bash commands. The edit to `.git/info/exclude`, made once per repo, still asks, and the `plannotator` tool, which the coordinator uses for reviews and the Inbox, follows its own permission settings.
+The `Edit` rule covers Claude Code's file-writing tools, not shell redirects. The edit to `.git/info/exclude`, made once per repo, still asks, and the `plannotator` tool, which the coordinator uses for reviews and the Inbox, follows its own permission settings.
 
 ## Known gaps
 
