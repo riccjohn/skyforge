@@ -6,11 +6,11 @@
 
 ## Context
 
-<!-- Links to the Jira ticket, MR, docs, or code areas the worker should start from. -->
+<!-- Links to the issue (a Jira ticket, for example), pull request, docs, or code areas the worker should start from. -->
 
 ## Constraints
 
-<!-- What must not change, standards to follow, areas that need human review (payments, inventory, personal data). -->
+<!-- What must not change, standards to follow, areas that need human review (security-sensitive code, payments, personal data, migrations). -->
 
 ## Done when
 
