@@ -22,8 +22,8 @@ You are the **coordinator**. Each piece of work gets one **worker**: a Claude Co
 Durable state lives on disk, so any session can be cleared and resumed:
 
 - **Brief**: `<worktree>/.light/sessions/<topic>-brief.md`, the work definition and the rules workers follow. The person edits it to change the process for this piece of work; workers re-read it every phase.
-- **Status**: `<worktree>/.light/sessions/<topic>.status`, written only by the worker. It appends one line at the end of each phase, `<phase> done` or `<phase> stuck: <reason>`; the last line is current.
-- **Phase**: `<worktree>/.light/sessions/<topic>.phase`, written only by you. It holds the phase you last prompted, so a resume knows what is in flight even before the worker finishes it.
+- **Status**: `<worktree>/.light/sessions/<topic>.status`, written only by the worker. It appends one line, on its own line, at the end of each phase: `<phase> done` or `<phase> stuck: <reason>`. The last line is current.
+- **Phase**: `<worktree>/.light/sessions/<topic>.phase`, written only by you. It holds the phase you started last, written before its prompt is sent, or `finished` after [Finish](#finish). A resume reads it to know what is in flight before the worker finishes it.
 - **Praxis artifacts** in `.light/sessions/` and the yaks task graph in the worktree.
 
 The `herdr` skill is the reference for Herdr commands. The `plannotator` skill is the reference for reviews and the Inbox.
@@ -36,16 +36,18 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 
 ### Resume
 
-Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it is in.
+Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it is in. Never restart a phase whose session ended: the person decides, because `.light/` is excluded from git and a rerun overwrites approved artifacts.
 
 | You find | Do |
 |---|---|
+| `.phase` is `finished` | Nothing to do; the work is done. |
+| no worker in the pane, and no `.status` or praxis artifacts in `.light/sessions/` | Launch didn't finish. With no brief, pick it up at step 5 of [Launch](#launch-a-piece-of-work). With a brief, ask the person whether they approved it: approved, go to step 6; not yet, reopen it for approval as in step 5. |
+| no worker in the pane | The worker's session ended mid-work. Tell the person which phase was in flight (`.phase`, or the last `.status` line), and wait for their direction. |
+| no `.phase` file | Read the pane. The praxis skill the worker is running or last ran (`/praxis:research`, `/praxis:plan-tasks`, `/praxis:implement`) is the phase; a fresh session with no praxis artifacts is `research`. Write it to `.phase`, then take the first matching row below. |
 | the worker is `working` | Arm the watch. |
-| no worker in the pane | Launch didn't finish. With no brief, pick it up at step 5 of [Launch](#launch-a-piece-of-work). With a brief, ask the person whether they approved it: approved, go to step 6; not yet, reopen it for approval as in step 5. |
-| no `.phase` file | The worktree predates the phase file. Take the phase from the last `.status` line and the artifacts in `.light/sessions/`, write it to `.phase`, then take the matching row below. |
-| last `.status` line is `<phase> done` for the phase in `.phase` | Verify the approved output from the [phase table](#run-the-phases), then start the next phase, or [Finish](#finish) after implement. |
-| last `.status` line is `<phase> stuck: …` for the phase in `.phase` | Notify the person with the reason, and wait for their direction. |
-| no `.status` line yet for the phase in `.phase` | Read the pane. Waiting on a review, a question, or a permission prompt: notify the person and arm the resume watch. A fresh session that never got the phase prompt: send it, then arm the watch. |
+| last `.status` line is `<phase> done` for the phase in `.phase` | Verify the approved output from the [phase table](#run-the-phases). Verified: start the next phase, or [Finish](#finish) after implement. Missing: tell the worker what is missing and arm the watch. |
+| last `.status` line is `<phase> stuck: …` for the phase in `.phase` | Read the pane. If the worker carried on after it and is waiting on a review or question, the line is old: notify the person about that and arm the resume watch. Otherwise notify the person with the reason, and wait for their direction. |
+| no `.status` line yet for the phase in `.phase` | Read the pane. Waiting on a review, a question, or a permission prompt: notify the person and arm the resume watch. The previous phase's session, finished (you were cleared before sending `/clear`): send `/clear` and the phase prompt as in [Run the phases](#run-the-phases), then arm the watch. A fresh session: send the phase prompt, then arm the watch. |
 
 ## Launch a piece of work
 
@@ -88,12 +90,12 @@ After a worker went quiet waiting on the person, arm the watch so it first waits
 herdr agent wait <topic> --until working --timeout 7000000 && herdr agent wait <topic> --timeout 7000000
 ```
 
-You are re-invoked when a watch exits. Read the last line of the worker's status file, `herdr agent get <topic>`, and `herdr agent read <topic> --source recent-unwrapped --lines 80`, then take the first matching row:
+You are re-invoked when a watch exits. Read `.phase`, the last line of the worker's status file, `herdr agent get <topic>`, and `herdr agent read <topic> --source recent-unwrapped --lines 80`, then take the first matching row:
 
 | Worker shows | Do |
 |---|---|
 | status `<phase> done` for the phase in `.phase` | Verify the approved output from the phase table. Verified: start the next phase. Missing: tell the worker what is missing and re-arm. |
-| status `<phase> stuck: …` | Tell the person the reason with `herdr notification show "skyforge: <topic> stuck" --body "<reason>" --sound request`, and wait for their direction. |
+| status `<phase> stuck: …` | If the pane shows the worker carried on after it, the line is old: take the row that matches its state. Otherwise tell the person the reason with `herdr notification show "skyforge: <topic> stuck" --body "<reason>" --sound request`, and wait for their direction. |
 | `blocked` (a permission prompt or question UI) | Notify the person with what it is asking, then arm the resume watch. |
 | `idle` or `done` with no new status | The worker is waiting on a Plannotator review or an Inbox answer. Notify the person, then arm the resume watch. |
 | still `working` (the wait timed out) | Re-arm the watch. |
@@ -108,4 +110,4 @@ A worker whose context runs out mid-phase: prompt it with `/mattpocock-skills:ha
 
 ## Finish
 
-After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, its Herdr workspace, and the session artifact in `attachments`. Leave the branch, worktree, and pane in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.
+After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, its Herdr workspace, and the session artifact in `attachments`. Then write `finished` to `.phase`, so a resume doesn't send it again. Leave the branch, worktree, and pane in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.

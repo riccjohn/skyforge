@@ -25,6 +25,6 @@ The coordinator runs you one phase at a time, each in a fresh session. Follow th
 - When the skill offers next steps, choose the one that stops. The coordinator starts the next phase in a fresh session.
 - Work only on the `skyforge/<topic>` branch in this worktree. Committing, pushing, and merging are the person's calls.
 - Do not read or change Jira or any other issue tracker. What you need from the ticket is in this brief.
-- End the phase by appending one line to `.light/sessions/<topic>.status`, leaving earlier lines alone: `<phase> done` once its output is approved, or `<phase> stuck: <reason>` when you cannot go on.
+- End the phase by appending one line, on its own line, to `.light/sessions/<topic>.status`, leaving earlier lines alone: `<phase> done` once its output is approved, or `<phase> stuck: <reason>` when you cannot go on.
 
 <!-- Add rules for this piece of work below. Workers re-read this file every phase. -->
