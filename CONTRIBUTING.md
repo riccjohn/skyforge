@@ -11,6 +11,15 @@
 
 ## Testing locally
 
+CI validates the plugin, checks the links in the Markdown files, and fails a pull request that changes `plugins/skyforge/` without bumping its version. To run the validation yourself:
+
+```shell
+claude plugin validate .
+claude plugin validate plugins/skyforge
+```
+
+To try your changes in Claude Code:
+
 ```shell
 # If you installed the remote marketplace, remove it first:
 claude plugin marketplace remove skyforge
