@@ -58,7 +58,7 @@ Each phase is one prompt to the worker. Start it, then arm a **watch**.
 | plan | `/clear`, then `/praxis:plan-tasks <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | `.light/sessions/<topic>-plan.md`, and `yx list --format json` in the worktree is non-empty |
 | implement | `/clear`, then `/praxis:implement <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | a `.light/sessions/*<topic>*.md` session artifact recording that every check under the brief's Done when passes |
 
-Send `/clear` with `herdr agent prompt <topic> "/clear"`, without `--wait`: `/clear` never puts the worker into `working`, so a wait reports `agent_prompt_stalled` even though the clear worked. Wait a few seconds, check with `herdr agent read <topic> --lines 20` that the pane shows a fresh session, then send the phase prompt with `herdr agent prompt <topic> "<prompt>"`.
+Send `/clear` with `herdr agent prompt <topic> "/clear"`, without `--wait`: `/clear` never puts the worker into `working`, so a wait reports `agent_prompt_stalled` even though the clear worked. Wait a few seconds, then run `herdr agent list`. If the worker's pane has no name, restore it with `herdr agent rename <pane ID> <topic>`: a `/clear` starts a new session, and Herdr drops a name that `herdr agent rename` set when the session changes. Check with `herdr agent read <topic> --lines 20` that the pane shows a fresh session, then send the phase prompt with `herdr agent prompt <topic> "<prompt>"`.
 
 ### Watch
 
