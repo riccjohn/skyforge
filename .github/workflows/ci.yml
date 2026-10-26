@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate the plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Pinned so a new CLI release can't change the result of an unchanged PR. Bump it on purpose.
+      - run: npm install -g @anthropic-ai/claude-code@2.1.308
+      # Validating the repo root checks only the marketplace manifest, so validate the plugin too.
+      # Without --strict, broken SKILL.md front matter is only a warning.
+      - run: claude plugin validate --strict .
+      - run: claude plugin validate --strict plugins/skyforge
+
+  links:
+    name: Check links
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress
+            --include-fragments
+            --max-retries 3
+            --retry-wait-time 5
+            --accept 200..=299,429
+            './**/*.md'
+
+  version:
+    name: Check the plugin version was bumped
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - env:
+          BASE: origin/${{ github.base_ref }}
+          MANIFEST: plugins/skyforge/.claude-plugin/plugin.json
+        run: |
+          if git diff --quiet "$BASE"...HEAD -- plugins/skyforge/; then
+            echo "Nothing under plugins/skyforge/ changed."
+            exit 0
+          fi
+          old=$(git show "$BASE:$MANIFEST" | jq -r .version)
+          new=$(jq -r .version "$MANIFEST")
+          if ! echo "$new" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error file=$MANIFEST::The version $new isn't semver (MAJOR.MINOR.PATCH)."
+            exit 1
+          fi
+          if [ "$old" = "$new" ]; then
+            echo "::error file=$MANIFEST::This PR changes plugins/skyforge/ but the version is still $old. Bump it using semver, as CONTRIBUTING.md describes: patch for fixes, minor for new behaviour, major for breaking changes."
+            exit 1
+          fi
+          if [ "$(printf '%s\n%s\n' "$old" "$new" | sort -V | tail -n1)" != "$new" ]; then
+            echo "::error file=$MANIFEST::The version went down, from $old to $new. Bump it up from $old."
+            exit 1
+          fi
+          echo "Version bumped from $old to $new."
