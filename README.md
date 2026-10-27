@@ -186,7 +186,7 @@ The coordinator also calls the `plannotator` tool once to review the brief and t
 
 - Claude Code only, for both the coordinator and the workers. OpenCode support is planned. Herdr and Plannotator already support OpenCode; what would change is installing the skill outside the plugin marketplace, clearing workers with `/new` instead of `/clear`, a coordinator watch that doesn't rely on Claude Code's background-command wake-ups, and, the biggest piece, praxis, which depends on Claude Code subagents and tools.
 - Run end to end once so far, on one piece of work. Slash commands and `/clear` sent through `herdr agent prompt` work, and workers used the `plannotator` tool for every review instead of the Bash default in praxis skills. Running several pieces of work at once hasn't been tried yet.
-- Herdr sometimes loses track of a worker while its session keeps running, and the worker's name disappears from `herdr agent list`. The coordinator restores the name and carries on, but the cause isn't known yet.
+- Herdr sometimes loses track of a worker while its session keeps running, and the worker's name disappears from `herdr agent list`. The coordinator restores the name with `herdr agent rename` and carries on. Herdr's source (0.7.5) explains why the loss repeats: a name given by `herdr agent start` survives a `/clear`, but a name given by `herdr agent rename` belongs to the current session, and a `/clear` starts a new one. The coordinator checks for the name after every `/clear` and restores it. What drops the first name isn't known yet.
 
 ## Contributing
 
