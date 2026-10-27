@@ -2,7 +2,7 @@
 name: start
 description: Coordinate Claude Code workers in Herdr, one per piece of work, each taken through praxis research, plan, and implement in its own worktree.
 disable-model-invocation: true
-argument-hint: "<topic> <goal> | <JIRA-KEY> [notes] | nothing to resume"
+argument-hint: "[what to work on, or an issue key]"
 allowed-tools:
   - Bash(herdr agent list*)
   - Bash(herdr agent get *)
@@ -33,7 +33,7 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 
 1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. Then run `herdr integration status` and check that the `claude:` line says `current`. Without Herdr's Claude Code integration, Herdr can't report worker states, so watches never fire; `herdr integration install claude` installs or updates it. If anything is missing, tell the person which one and how to install it (the README's prerequisites table), and stop. Don't install it yourself: the integration changes the person's Claude Code settings.
 2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work. If the worker's pane holds a Claude Code agent with no name, restore it with `herdr agent rename <pane ID> <topic>`. Then read `.phase`, the last line of `.status`, and `herdr agent get <topic>`, and take the first matching row of [Resume](#resume). Done when every such worktree has a watch armed, is finished, or is waiting on the person.
-3. With no arguments and nothing to resume, ask the person for a topic and goal.
+3. With no arguments and nothing to resume, ask the person what the worker should do: a description of the work, or an issue key. Their answer is the request in [Launch](#launch-a-piece-of-work).
 
 ### Resume
 
@@ -52,9 +52,11 @@ Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it i
 
 ## Launch a piece of work
 
-1. Settle the **topic** and **goal** from the arguments. The topic is a kebab-case slug matching `[a-z][a-z0-9-]{0,31}`. It names the branch (`skyforge/<topic>`), the worker, and the artifacts. The goal is one line, used in the research prompt and the brief.
-   - `<topic> <goal>`: the first word is the topic, the rest is the goal.
-   - `<JIRA-KEY> [notes]`: the first word is an issue key such as `PROJ-123`. Fetch the issue with a Jira tool available in this session, such as a Jira MCP server. If there is none, tell the person and ask for a topic and goal instead. The topic is the lowercased key plus a few words from the summary (`proj-123-discount-codes`), the goal is the summary. Any notes after the key go into the brief, except requests to change the issue (see [Jira](#jira)).
+1. Settle the **goal** and **topic** from the person's request: the arguments, or their answer from step 3 of [Start](#start). The request is free text, with no fixed order. The goal is one line, used in the research prompt and the brief. The topic is a kebab-case slug matching `[a-z][a-z0-9-]{0,31}`. It names the branch (`skyforge/<topic>`), the worker, and the artifacts.
+   - A request with an issue key such as `PROJ-123` in it: fetch the issue with a Jira tool available in this session, such as a Jira MCP server. If there is none, tell the person and ask them to describe the work instead. The goal is the issue's summary. Propose the lowercased key plus a few words from the summary as the topic (`proj-123-discount-codes`). The rest of the request goes into the brief, except requests to change the issue (see [Jira](#jira)).
+   - Any other request: the goal is the request, cut to one line if it runs longer, with the rest going into the brief. Propose a few words from the goal as the topic (`add-discount-codes`).
+
+   Confirm the topic before anything is created, because it can't change once the branch exists. Ask with the `AskUserQuestion` tool, showing the goal in the question and offering your proposal first and one alternative; the person can type their own. If what they type doesn't match the pattern, say why and ask again.
 2. Settle the **repo**: the git repository the code lands in. It is usually the one you started in, but a Jira issue can name another repo or a code area that lives in one. If you can't tell, ask. Its root is `<repo root>` in the steps below; run every setup command there, not in the repo you started in.
 3. Keep Skyforge's files out of commits and make yaks usable, because praxis falls back to session-scoped tasks that `/clear` destroys. In `<repo root>`, append `.yaks` and `.light/` to `.git/info/exclude` (local to this clone; worktrees share it), skipping any that `.gitignore` or the exclude file already covers. Then run `yx list --format json` and check that it succeeds.
 4. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response. Herdr opens the worktree as its own workspace, labelled `<topic>`, nested under the workspace of the repo's main checkout. Run `herdr workspace list` before and after: if a workspace for `<repo root>` appears that wasn't there before, Herdr opened it to hold the worktree.
@@ -63,7 +65,7 @@ Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it i
 
 ### Jira
 
-Change an issue only when the person asks, for example "move it to In Progress and assign it to me" in the notes. Make the change yourself, after the worker starts, and tell the person what you changed. Workers never use Jira; the brief carries what they need.
+Change an issue only when the person asks, for example "move it to In Progress and assign it to me" in their request. Make the change yourself, after the worker starts, and tell the person what you changed. Workers never use Jira; the brief carries what they need.
 
 ## Run the phases
 

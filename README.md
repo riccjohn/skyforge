@@ -55,29 +55,22 @@ Start a new Claude Code session to pick up the update.
 
 ## Usage
 
-From a Claude Code session running inside Herdr, in the repo you want to work on, run `/skyforge:start` in one of three forms:
+From a Claude Code session running inside Herdr, in the repo you want to work on, run `/skyforge:start`. You can say what to work on in the same line, in your own words, or leave it out and the coordinator asks:
 
 ```text
-/skyforge:start <topic> <goal>
-/skyforge:start <JIRA-KEY> [notes]
 /skyforge:start
-```
-
-| Argument | What it is |
-|---|---|
-| `<topic>` | A short kebab-case name for the piece of work: lowercase letters, digits, and hyphens, starting with a letter, up to 32 characters. It names the branch (`skyforge/<topic>`), the Herdr worker, and the files under `.light/sessions/`. |
-| `<goal>` | Everything after the topic: a one-line description of what you want built. The coordinator puts it in the brief and in the worker's research prompt. |
-| `<JIRA-KEY>` | A Jira issue key such as `PROJ-123`, in place of a topic and goal. The coordinator reads the issue and derives both: the topic from the key and summary (`proj-123-discount-codes`), the goal from the summary. The description and acceptance criteria go into the brief. Needs a Jira MCP server, or another Jira tool, in the coordinator's session. |
-| `[notes]` | Optional text after a Jira key, such as "the API is done, only the UI is left". It goes into the brief. Requests to change the ticket, such as "move it to In Progress and assign it to me", are carried out by the coordinator once the worker starts. The coordinator changes the ticket only when you ask, and workers never touch Jira. |
-| _(nothing)_ | Resume the work already running in this repo, after a `/clear` or in a new session. |
-
-For example:
-
-```text
-/skyforge:start add-discount-codes Let customers apply a discount code at checkout
+/skyforge:start Let customers apply a discount code at checkout
 /skyforge:start SHOP-482
-/skyforge:start SHOP-482 Leave the payment provider integration alone
+/skyforge:start SHOP-482, but leave the payment provider integration alone
 ```
+
+| You give | What the coordinator does |
+|---|---|
+| _(nothing)_ | Resumes the work already running in this repo, after a `/clear` or in a new session. With nothing to resume, asks what the worker should do. |
+| A description of the work | Uses it as the **goal**: a one-line description of what you want built, which goes in the brief and the worker's research prompt. Anything longer goes into the brief. |
+| A Jira issue key such as `PROJ-123` | Reads the issue and takes the goal from its summary, and its description and acceptance criteria for the brief. Anything else you write goes into the brief. Requests to change the ticket, such as "move it to In Progress and assign it to me", are carried out once the worker starts; the coordinator changes the ticket only when you ask, and workers never touch Jira. Needs a Jira MCP server, or another Jira tool, in the coordinator's session. |
+
+Before creating anything, the coordinator proposes a **topic** and asks you to confirm it or type your own. The topic is a short kebab-case name for the piece of work (`add-discount-codes`, or `proj-123-discount-codes` from an issue): lowercase letters, digits, and hyphens, starting with a letter, up to 32 characters. It names the branch (`skyforge/<topic>`), the Herdr worker, and the files under `.light/sessions/`.
 
 The coordinator:
 
@@ -86,7 +79,7 @@ The coordinator:
 3. Starts a worker in its own Herdr workspace and runs the three phases. It pings you with a Herdr notification whenever a review, a question, or a permission prompt needs you. See [Where things appear in Herdr](#where-things-appear-in-herdr).
 4. Sends a summary to the Plannotator Inbox when the work is done.
 
-Run `/skyforge:start` again with another topic or issue key to start more work in parallel. Run it with no arguments in a new session to pick up running work from disk.
+Run `/skyforge:start` again to start more work in parallel. In a new session, run it on its own to pick up running work from disk.
 
 To change how a piece of work is done, edit its brief. Workers re-read it at the start of every phase.
 
