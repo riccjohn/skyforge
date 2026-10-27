@@ -137,7 +137,50 @@ The branch, the worktree, and both workspaces stay in place for you to review. C
 
 ## Permissions
 
-The skill pre-approves only read-only Herdr and yaks commands. Each `herdr agent prompt` and `herdr worktree create` asks for approval. If you are comfortable with that, allow them in your own settings.
+The skill's `allowed-tools` pre-approves read-only Herdr and yaks commands, but only for the turn that runs `/skyforge:start`. Once you send the coordinator another message, they ask again in the default permission mode, and the coordinator runs them several times a phase.
+
+These rules allow those read-only commands, notifications, and reads in Herdr's worktrees. Add them to `permissions.allow` in `.claude/settings.local.json` of the repo you run the coordinator from, or in `~/.claude/settings.json`. Either way, workers get them too: a worktree reads the main checkout's settings, and every session reads the global file. So the snippet holds only rules that are safe for any session.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(herdr agent list*)",
+      "Bash(herdr agent get *)",
+      "Bash(herdr agent read *)",
+      "Bash(herdr agent wait *)",
+      "Bash(herdr worktree list*)",
+      "Bash(herdr workspace list*)",
+      "Bash(herdr integration status*)",
+      "Bash(yx list*)",
+      "Bash(herdr notification show *)",
+      "Read(~/.herdr/worktrees/**)"
+    ]
+  }
+}
+```
+
+| Rule | Lets the coordinator |
+|---|---|
+| `herdr agent list`, `get`, `read`, `wait` | Find workers, read their panes, and watch for them to stop. `herdr agent read` can read any Herdr pane, not only workers. |
+| `herdr worktree list`, `herdr workspace list`, `herdr integration status` | Find live work on resume, and check the setup at start. |
+| `yx list` | Check the task graph after plan. |
+| `herdr notification show` | Ping you when a worker needs you. |
+| `Read(~/.herdr/worktrees/**)` | Read status files and phase output in a worker's worktree, and `cd` there to run `yx list`. The worktree is outside the coordinator's directory, so each read asks otherwise. |
+
+If you set `[worktrees] directory` in your Herdr config, use that path in place of `~/.herdr/worktrees`: start it with `~/` for a path under your home directory, or with two slashes for any other absolute path (`//Volumes/dev/wt/**`). A single leading slash anchors at the settings file, and the rule matches nothing.
+
+These still ask, and should:
+
+- **`herdr agent prompt`**, two or three times a phase. Text that starts with `!` runs as a shell command in the target's pane with no permission check, so allowing it is the same as allowing every Bash command, for every session that has the rule. A hook that approves only Skyforge's own prompts (`/clear`, `/praxis:…`) could remove these prompts safely; Skyforge doesn't ship one yet.
+- **Writing `.phase`**, once a phase. Workers would get the same rule, and a worker that writes `finished` there ends its own coordination.
+- **`herdr agent start`**, once per piece of work. It passes any flags after `--` to the agent, including ones that turn off its permission checks, so read the command before you approve it.
+- **`herdr worktree create`**, once per piece of work.
+- **`herdr agent rename`**, only when Herdr loses a worker's name. It can rename any agent, so prompts meant for a worker could reach another session.
+- **Writing the brief**, once per piece of work. You approve the brief in Plannotator anyway.
+- **The edit to `.git/info/exclude`**, once per repo. Claude Code protects `.git`, and no allow rule covers it.
+
+The coordinator also calls the `plannotator` tool once to review the brief and the `plannotator_inbox` tool once at Finish. If either asks, approve it when it does; they run once per piece of work.
 
 ## Known gaps
 
