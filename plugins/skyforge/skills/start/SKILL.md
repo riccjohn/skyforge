@@ -75,7 +75,7 @@ Each phase is one prompt to the worker. Write the phase name (`research`, `plan`
 | plan | `/clear`, then `/praxis:plan-tasks <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | `.light/sessions/<topic>-plan.md`, and `yx list --format json` in the worktree is non-empty |
 | implement | `/clear`, then `/praxis:implement <topic>. Read .light/sessions/<topic>-brief.md first and follow it.` | a `.light/sessions/*<topic>*.md` session artifact recording that every check under the brief's Done when passes |
 
-Send `/clear` with `herdr agent prompt <topic> "/clear"`, without `--wait`: `/clear` never puts the worker into `working`, so a wait reports `agent_prompt_stalled` even though the clear worked. Wait a few seconds, check with `herdr agent read <topic> --lines 20` that the pane shows a fresh session, then send the phase prompt with `herdr agent prompt <topic> "<prompt>"`.
+Send `/clear` with `herdr agent prompt <topic> "/clear"`, without `--wait`: `/clear` never puts the worker into `working`, so a wait reports `agent_prompt_stalled` even though the clear worked. Wait a few seconds, and check with `herdr agent read <pane ID> --lines 20` that the pane shows a fresh session; use the pane ID, because the name may be gone. Then run `herdr agent list`. If the worker's pane has no name, restore it with `herdr agent rename <pane ID> <topic>`: a `/clear` starts a new session, and when the session changes, Herdr drops a name that `herdr agent rename` set. Then send the phase prompt with `herdr agent prompt <topic> "<prompt>"`.
 
 ### Watch
 
@@ -107,7 +107,7 @@ Only the worker writes the status file, and only you write `.phase` and `.handof
 
 Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`. Every notification names the worker's workspace and says where to answer: a permission prompt or question UI in that workspace's pane, a review or Inbox question in Plannotator, or a stuck status by telling you.
 
-A worker whose context runs out mid-phase: prompt it with `/mattpocock-skills:handoff continue the <phase> phase`, read the handoff path from its reply, and write `<phase> <handoff path>` to `.light/sessions/<topic>.handoff`. Then `/clear` it and prompt it to continue from that file.
+A worker whose context runs out mid-phase: prompt it with `/mattpocock-skills:handoff continue the <phase> phase`, read the handoff path from its reply, and write `<phase> <handoff path>` to `.light/sessions/<topic>.handoff`. Then `/clear` it as in [Run the phases](#run-the-phases) and prompt it to continue from that file.
 
 ## Finish
 
