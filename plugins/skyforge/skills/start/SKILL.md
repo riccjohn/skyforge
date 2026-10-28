@@ -8,10 +8,10 @@ allowed-tools:
   - Bash(herdr agent get *)
   - Bash(herdr agent read *)
   - Bash(herdr agent wait *)
-  - Bash(herdr worktree list*)
   - Bash(herdr pane list*)
   - Bash(herdr integration status*)
-  - Bash(herdr workspace list*)
+  - Bash(git worktree list*)
+  - Bash(git -C * branch --show-current)
   - Bash(yx list*)
 ---
 
@@ -32,7 +32,7 @@ The `herdr` skill is the reference for Herdr commands. The `plannotator` skill i
 ## Start
 
 1. Check the tools: `HERDR_ENV` is `1`, `herdr`, `plannotator`, and `yx` are on `PATH`, and the `herdr` skill is available. Then run `herdr integration status` and check that the `claude:` line says `current`. Without Herdr's Claude Code integration, Herdr can't report worker states, so watches never fire; `herdr integration install claude` installs or updates it. If anything is missing, tell the person which one and how to install it (the README's prerequisites table), and stop. Don't install it yourself: the integration changes the person's Claude Code settings.
-2. Resume first. Run `herdr worktree list --json` and `herdr agent list`. Every worktree on a `skyforge/*` branch is a live piece of work. If the worker's pane holds a Claude Code agent with no name, restore it with `herdr agent rename <pane ID> <topic>`. Then read `.phase`, the last line of `.status`, and `herdr agent get <topic>`, and take the first matching row of [Resume](#resume). Done when every such worktree has a watch armed, is finished, or is waiting on the person.
+2. Resume first. Workers run in Herdr tabs, usually in your workspace but possibly in another, if the person ran you from somewhere else last time. Run `herdr pane list`, and for each pane other than yours (`$HERDR_PANE_ID`), run `git -C <cwd> branch --show-current` on its `cwd`. Every pane on a `skyforge/<topic>` branch is a live piece of work. Its worker's pane is the one whose `agent` is `claude`, or the first of them if none is. Then run `git worktree list --porcelain` in the repo you started in. A worktree on a `skyforge/*` branch with no pane is live work too, unless its `.phase` is `finished`: open a tab for it as in step 4 of [Launch](#launch-a-piece-of-work), skipping `git worktree add`. A worktree in another repo is found only through its pane. Then run `herdr agent list`. If the worker's pane holds a Claude Code agent with no name, restore it with `herdr agent rename <pane ID> <topic>`. Then read `.phase`, the last line of `.status`, and `herdr agent get <topic>`, and take the first matching row of [Resume](#resume). Done when every such worktree has a watch armed, is finished, or is waiting on the person.
 3. With no arguments and nothing to resume, ask the person what the worker should do: a description of the work, or an issue key. Their answer is the request in [Launch](#launch-a-piece-of-work).
 
 ### Resume
@@ -59,9 +59,9 @@ Never re-prompt a worker that is `working`: a `/clear` would wipe the phase it i
    Confirm the topic before anything is created, because it can't change once the branch exists. Ask with the `AskUserQuestion` tool, showing the goal in the question and offering your proposal first and one alternative; the person can type their own. If what they type doesn't match the pattern, say why and ask again.
 2. Settle the **repo**: the git repository the code lands in. It is usually the one you started in, but a Jira issue can name another repo or a code area that lives in one. If you can't tell, ask. Its root is `<repo root>` in the steps below; run every setup command there, not in the repo you started in.
 3. Keep Skyforge's files out of commits and make yaks usable, because praxis falls back to session-scoped tasks that `/clear` destroys. In `<repo root>`, append `.yaks` and `.light/` to `.git/info/exclude` (local to this clone; worktrees share it), skipping any that `.gitignore` or the exclude file already covers. Then run `yx list --format json` and check that it succeeds.
-4. Create the worktree: `herdr worktree create --cwd <repo root> --branch skyforge/<topic> --label <topic> --no-focus --json`. Read the worktree path and pane ID from the JSON response. Herdr opens the worktree as its own workspace, labelled `<topic>`, nested under the workspace of the repo's main checkout. Run `herdr workspace list` before and after: if a workspace for `<repo root>` appears that wasn't there before, Herdr opened it to hold the worktree.
+4. Create the worktree and open a tab for it in your workspace. Put the worktree where Herdr puts its own: `<worktrees>/<repo name>/skyforge-<topic>`, where `<repo name>` is the last part of `<repo root>` and `<worktrees>` is `directory` under `[worktrees]` in `~/.config/herdr/config.toml`, or `~/.herdr/worktrees` when that isn't set. Run `git -C <repo root> worktree add -b skyforge/<topic> <worktree path>`; if the branch already exists, tell the person and ask for another topic. Then run `herdr tab create --workspace $HERDR_WORKSPACE_ID --cwd <worktree path> --label <topic> --no-focus`, and read the pane ID from `.result.root_pane.pane_id` in the response.
 5. Write the brief from [brief-template.md](references/brief-template.md), filling in everything you can from the person's request. From a Jira issue, put its key and link under Context, the substance of its description under Goal and Context, and its acceptance criteria under Done when, so workers never need Jira access. Make every item under Done when a check a worker can run and record. When the repo has no test suite, write the checks that take its place. Open it for approval with the `plannotator` tool (`action: annotate`, `gate: true`), then end your turn. Done when the person approves; on annotations, revise and reopen.
-6. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`. Then make any Jira changes the person asked for. Tell the person where to find the worker: its workspace `<topic>`, nested under the repo's workspace. If Herdr opened a workspace for the main checkout in step 4, say so, and that nothing runs in it.
+6. Start the worker: `herdr agent start <topic> --kind claude --pane <pane ID>`. Then make any Jira changes the person asked for. Tell the person where to find the worker: the tab `<topic>` in this workspace.
 
 ### Jira
 
@@ -107,10 +107,10 @@ You are re-invoked when a watch exits. Read `.phase`, the last line of the worke
 
 Only the worker writes the status file, and only you write `.phase` and `.handoff`. Never write the status file yourself, even when the phase's output looks complete: the worker writes `done` only after the person approves, so a missing line can mean a review is still open.
 
-Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`. Every notification names the worker's workspace and says where to answer: a permission prompt or question UI in that workspace's pane, a review or Inbox question in Plannotator, or a stuck status by telling you.
+Permission prompts, reviews, and questions belong to the person: notify them and wait. Never answer them for the worker with `send-keys`. Every notification names the worker's tab and says where to answer: a permission prompt or question UI in that tab, a review or Inbox question in Plannotator, or a stuck status by telling you.
 
 A worker whose context runs out mid-phase: prompt it with `/mattpocock-skills:handoff continue the <phase> phase`, read the handoff path from its reply, and write `<phase> <handoff path>` to `.light/sessions/<topic>.handoff`. Then `/clear` it as in [Run the phases](#run-the-phases) and prompt it to continue from that file.
 
 ## Finish
 
-After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, its Herdr workspace, and the session artifact in `attachments`. Then write `finished` to `.phase`, so a resume doesn't send it again. Leave the branch, worktree, and pane in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.
+After implement verifies, send one message with the `plannotator_inbox` tool: the topic, branch, worktree path, its Herdr tab, and the session artifact in `attachments`. Then write `finished` to `.phase`, so a resume doesn't send it again. Leave the branch, worktree, and tab in place. Committing to `main`, pushing, merging, and removing the worktree are the person's calls.

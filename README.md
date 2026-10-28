@@ -76,7 +76,7 @@ The coordinator:
 
 1. Creates the worktree and the `skyforge/<topic>` branch.
 2. Writes a **brief** (`.light/sessions/<topic>-brief.md`) for you to approve. It holds the goal, the definition of done, and the rules workers follow. From a Jira issue, it carries the ticket's content, so workers don't need Jira access.
-3. Starts a worker in its own Herdr workspace and runs the three phases. It pings you with a Herdr notification whenever a review, a question, or a permission prompt needs you. See [Where things appear in Herdr](#where-things-appear-in-herdr).
+3. Starts a worker in its own Herdr tab and runs the three phases. It pings you with a Herdr notification whenever a review, a question, or a permission prompt needs you. See [Where things appear in Herdr](#where-things-appear-in-herdr).
 4. Sends a summary to the Plannotator Inbox when the work is done.
 
 Run `/skyforge:start` again to start more work in parallel. In a new session, run it on its own to pick up running work from disk.
@@ -85,28 +85,26 @@ To change how a piece of work is done, edit its brief. Workers re-read it at the
 
 ## Where things appear in Herdr
 
-Skyforge puts each piece of work in its own Herdr workspace, so the sidebar shows the state of each one separately.
+Skyforge puts each piece of work in its own tab, in the Herdr workspace where you ran the coordinator.
 
 - **The coordinator** stays in the pane where you ran `/skyforge:start`. Talk to it to start work, change direction, or ask how a piece of work is going.
-- **Each piece of work** gets a workspace named after its topic. The workspace is a git worktree on the `skyforge/<topic>` branch, under `~/.herdr/worktrees/`, and the worker runs in its pane.
-- **Herdr nests that workspace** under the workspace of the repo's main checkout, because a worktree is an extra checkout of the same repo. The nesting is only a display. Each workspace has its own tabs, panes, and directory.
-- **Herdr may open a workspace you didn't create.** If no workspace is open for the repo where the code lands, for example when a Jira issue points at a different repo, Herdr opens one for the main checkout to hold the worktree. It contains a plain shell, and nothing runs in it. The coordinator tells you when this happens.
+- **Each piece of work** gets a tab named after its topic. The tab opens in a git worktree on the `skyforge/<topic>` branch, under `~/.herdr/worktrees/<repo>/`, and the worker runs in its pane. When the code lands in a different repo from the one you ran the coordinator in, the tab still opens in your workspace; only its directory is in the other repo.
+- **The Agent panel** in the Herdr sidebar lists each worker with its tab name and state. The Spaces panel shows your workspace once, with the state of all its tabs rolled up.
 
 For example, `/skyforge:start SHOP-482` run from `shop-api`, for work that lands in `storefront`:
 
 ```text
-spaces
-  shop-api                      ← the coordinator, in the tab where you ran it
-▾ storefront                    ← opened by Herdr for storefront's main checkout; a plain shell
-    shop-482-discount-codes     ← the worker, in its worktree
+shop-api
+  tab 1                         ← the coordinator, where you ran it
+  tab shop-482-discount-codes   ← the worker, in its storefront worktree
 ```
 
 ### Following progress
 
 | To see | Look at |
 |---|---|
-| Whether a worker is working, blocked, or finished | The status shown next to its workspace in the Herdr sidebar |
-| What a worker is doing now | Its workspace. Click it to watch the worker; you don't need to type anything there. |
+| Whether a worker is working, blocked, or finished | Its row in the Agent panel of the Herdr sidebar, or its tab |
+| What a worker is doing now | Its tab. Open it to watch the worker; you don't need to type anything there. |
 | Which phase it is in and how the last one ended | Ask the coordinator, or read `.light/sessions/<topic>.phase` (the phase in flight) and the last line of `<topic>.status` (how the last phase ended) in the worktree |
 | Plans and code to review | Plannotator, which opens a review in your browser when a phase needs your approval |
 | Questions a worker can't answer itself | The Plannotator Inbox |
@@ -114,9 +112,9 @@ spaces
 
 ### When a worker needs you
 
-The coordinator sends a Herdr notification that names the worker's workspace and says what it needs:
+The coordinator sends a Herdr notification that names the worker's tab and says what it needs:
 
-- **A permission prompt or question in the worker's pane**: open the worker's workspace and answer it there. The coordinator never answers for you.
+- **A permission prompt or question in the worker's pane**: open the worker's tab and answer it there. The coordinator never answers for you.
 - **A review or an Inbox question**: answer it in Plannotator.
 - **Stuck**: the worker wrote `<phase> stuck: <reason>` and stopped. Tell the coordinator what to do, or edit the brief and ask the coordinator to restart the phase.
 
@@ -126,7 +124,7 @@ Herdr shows these notifications only if its pop-ups are turned on, and it hides 
 
 ### When the work is done
 
-The branch, the worktree, and both workspaces stay in place for you to review. Committing, pushing, and merging are your calls. When you're finished, `herdr worktree remove --workspace <id>` removes the worktree and closes its workspace. A workspace that Herdr opened for the main checkout is yours to close or keep.
+The branch, the worktree, and the worker's tab stay in place for you to review. Committing, pushing, and merging are your calls. When you're finished, close the tab, then run `git worktree remove <worktree path>` in the repo; the branch stays until you delete it.
 
 ## Permissions
 
@@ -142,12 +140,14 @@ These rules allow those read-only commands, notifications, and reads in Herdr's 
       "Bash(herdr agent get *)",
       "Bash(herdr agent read *)",
       "Bash(herdr agent wait *)",
-      "Bash(herdr worktree list*)",
-      "Bash(herdr workspace list*)",
+      "Bash(herdr pane list*)",
       "Bash(herdr integration status*)",
+      "Bash(git worktree list*)",
+      "Bash(git -C * branch --show-current)",
       "Bash(yx list*)",
       "Bash(herdr notification show *)",
-      "Read(~/.herdr/worktrees/**)"
+      "Read(~/.herdr/worktrees/**)",
+      "Read(~/.config/herdr/config.toml)"
     ]
   }
 }
@@ -156,10 +156,12 @@ These rules allow those read-only commands, notifications, and reads in Herdr's 
 | Rule | Lets the coordinator |
 |---|---|
 | `herdr agent list`, `get`, `read`, `wait` | Find workers, read their panes, and watch for them to stop. `herdr agent read` can read any Herdr pane, not only workers. |
-| `herdr worktree list`, `herdr workspace list`, `herdr integration status` | Find live work on resume, and check the setup at start. |
+| `herdr pane list`, `git worktree list`, `git -C <dir> branch --show-current` | Find live work on resume: the panes whose directory is on a `skyforge/*` branch, and worktrees that lost their tab. |
+| `herdr integration status` | Check the setup at start. |
 | `yx list` | Check the task graph after plan. |
 | `herdr notification show` | Ping you when a worker needs you. |
 | `Read(~/.herdr/worktrees/**)` | Read status files and phase output in a worker's worktree, and `cd` there to run `yx list`. The worktree is outside the coordinator's directory, so each read asks otherwise. |
+| `Read(~/.config/herdr/config.toml)` | Read your Herdr config's `[worktrees] directory`, so new worktrees go where Herdr puts its own. |
 
 If you set `[worktrees] directory` in your Herdr config, use that path in place of `~/.herdr/worktrees`: start it with `~/` for a path under your home directory, or with two slashes for any other absolute path (`//Volumes/dev/wt/**`). A single leading slash anchors at the settings file, and the rule matches nothing.
 
@@ -168,7 +170,7 @@ These still ask, and should:
 - **`herdr agent prompt`**, two or three times a phase. Text that starts with `!` runs as a shell command in the target's pane with no permission check, so allowing it is the same as allowing every Bash command, for every session that has the rule. A hook that approves only Skyforge's own prompts (`/clear`, `/praxis:…`) could remove these prompts safely; Skyforge doesn't ship one yet.
 - **Writing `.phase`**, once a phase. Workers would get the same rule, and a worker that writes `finished` there ends its own coordination.
 - **`herdr agent start`**, once per piece of work. It passes any flags after `--` to the agent, including ones that turn off its permission checks, so read the command before you approve it.
-- **`herdr worktree create`**, once per piece of work.
+- **`git worktree add` and `herdr tab create`**, once per piece of work.
 - **`herdr agent rename`**, only when Herdr loses a worker's name. It can rename any agent, so prompts meant for a worker could reach another session.
 - **Writing the brief**, once per piece of work. You approve the brief in Plannotator anyway.
 - **The edit to `.git/info/exclude`**, once per repo. Claude Code protects `.git`, and no allow rule covers it.
